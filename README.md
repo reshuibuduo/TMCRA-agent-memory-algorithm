@@ -10,6 +10,24 @@ Long-running agents need more than simple vector recall. They need to preserve u
 
 TMCRA organizes memory into graph nodes and learned retrieval paths, then surfaces compact evidence to the answer model. The goal is to let external agents use long-term memory through a runtime/API layer while keeping the memory algorithm and model weights independently deployable.
 
+## What TMCRA Does
+
+TMCRA adds a dedicated memory runtime between an agent application and its answer model.
+
+At write time, TMCRA turns dialogue into memory nodes, event units, profile signals, and graph paths. This lets the system preserve not only isolated facts, but also relationships between facts across turns and sessions.
+
+At retrieval time, TMCRA scores graph nodes and paths, selects compact evidence, and injects only the most relevant memory context into the answer model. The answer model still performs natural-language reasoning, while TMCRA handles long-memory organization, recall, and evidence surfacing.
+
+The current runtime focuses on:
+
+- user fact memory
+- assistant-response memory
+- profile and preference memory
+- temporal memory
+- cross-session graph tunneling
+- learned node/path scoring
+- compact evidence selection for downstream LLMs
+
 ## Benchmark Result
 
 This package includes a full LongMemEval S500 run.
@@ -47,6 +65,54 @@ The included model package preserves the full training output for the graph scor
 - `node_scorer_last.pt` and `path_scorer_last.pt`: final training aliases.
 - `checkpoints/`: epoch and step checkpoints.
 - `export_manifest.json`, `train_summary.json`, and `train.log`: model metadata and training trace.
+
+## How to Use / Load Models
+
+The runtime graph models are stored under:
+
+```text
+models/action_frame_tunnel_graph548_tunnel_fusion_train_20260524_042557/
+```
+
+For inference/runtime use, the main files are:
+
+```text
+node_scorer.pt
+path_scorer.pt
+export_manifest.json
+```
+
+The typical runtime configuration points TMCRA to these weights:
+
+```bash
+export TMCRA_NODE_MODEL_PATH="models/action_frame_tunnel_graph548_tunnel_fusion_train_20260524_042557/node_scorer.pt"
+export TMCRA_PATH_MODEL_PATH="models/action_frame_tunnel_graph548_tunnel_fusion_train_20260524_042557/path_scorer.pt"
+export TMCRA_RETRIEVAL_MODE="hybrid_node_scored"
+export TMCRA_REQUIRE_LEARNED_SCORER="1"
+```
+
+The evaluation entrypoint snapshot is:
+
+```text
+code/run_lme_s10_native_tmcra.py
+```
+
+The core adapter snapshot is:
+
+```text
+code/memory_adapters.py
+```
+
+The benchmark outputs are available in:
+
+```text
+results/predictions.jsonl
+results/judge_gpt4o_alias_vectorengine.jsonl
+results/judge_gpt4o_alias_vectorengine.jsonl.summary.json
+results/lme_s500_frozen_baseline38_full10_20260525_results.tar.gz
+```
+
+For a deployment build, load the two scorer files into the TMCRA adapter and point the agent's memory middleware to the TMCRA retrieval API. The answer model can be any OpenAI-compatible or local LLM endpoint; TMCRA supplies the selected memory evidence, and the answer model produces the final response.
 
 ## Current Strengths
 
