@@ -113,6 +113,15 @@ The included code snapshot is Python-based. A practical runtime environment shou
 
 The benchmark scripts expect LongMemEval-format input data and write JSONL predictions and judge outputs. Runtime deployments can use the same model files without running the benchmark harness.
 
+## Optional Modules
+
+TMCRA also keeps optional extension points for retrieval and planning experiments. These modules can be enabled in deployment or evaluation builds when the target use case needs them.
+
+- **Embedder interface**: an optional semantic embedding channel that can run alongside the graph-memory scorer. It is intended to provide additional dense semantic recall before or during graph evidence selection, without replacing the learned graph node/path scorers.
+- **LLM planner interface**: an optional planner hook that can use an external LLM to organize evidence, expand query intent, or create an answer plan before the final answer call. This is useful for experiments and higher-cost deployments, while the default baseline keeps the core graph scorer path independently measurable.
+
+These interfaces are integration points, not required dependencies for the frozen S500 baseline. They are designed so downstream deployments can decide whether to run a lighter scorer-only path or a heavier path with embedder/planner assistance.
+
 ## Included Artifacts
 
 - `code/`: runtime and evaluation code snapshot for this baseline.

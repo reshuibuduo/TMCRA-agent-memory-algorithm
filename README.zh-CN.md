@@ -113,6 +113,15 @@ code/memory_adapters.py
 
 benchmark 脚本使用 LongMemEval 格式输入数据，并输出 JSONL 格式的预测和 judge 结果。实际运行时部署可以直接使用同一套模型文件，不需要运行 benchmark harness。
 
+## 可开启模块
+
+TMCRA 当前也保留了用于召回和规划实验的可选接入口。部署或评估时，如果目标场景需要，可以按需开启这些模块。
+
+- **Embedder 接入口**：可选的语义 embedding 通道，可以和图记忆 scorer 并行工作。它用于在图证据选择前或选择过程中提供额外的稠密语义召回，但不替代学习式图节点/路径 scorer。
+- **LLM planner 接入口**：可选的规划 hook，可以调用外部 LLM 来整理证据、扩展 query intent，或在最终回答前生成 answer plan。它适合实验和更高成本的部署场景；默认基线仍保持核心图 scorer 链路可以独立测量。
+
+这些接口是可集成的扩展点，不是冻结 S500 基线的必需依赖。下游部署可以根据成本和效果选择轻量的 scorer-only 路径，或开启 embedder/planner 辅助的增强路径。
+
 ## 包含内容
 
 - `code/`：该基线使用的运行时和测评代码快照。
