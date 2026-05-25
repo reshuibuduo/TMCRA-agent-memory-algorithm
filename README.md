@@ -1,4 +1,4 @@
-# TMCRA Long-Memory Runtime
+# TMCRA Long-Memory Layer
 
 <p align="center">
   <img src="assets/tmcra-logo.png" alt="TMCRA logo" width="420">
@@ -6,7 +6,7 @@
 
 [中文版本](README.zh-CN.md)
 
-TMCRA is a runtime layer that gives agent systems long-term memory. It helps an LLM retrieve, connect, and reason over long dialogue histories without exposing the full conversation context on every turn.
+TMCRA is a long-memory layer for agent systems. It helps an LLM retrieve, connect, and reason over long dialogue histories without exposing the full conversation context on every turn.
 
 This repository contains a frozen TMCRA baseline package with model weights, runtime code snapshots, training metadata, and LongMemEval S500 benchmark results.
 
@@ -14,13 +14,13 @@ License: MIT.
 
 ## What TMCRA Does
 
-TMCRA adds a dedicated memory runtime between an agent application and its answer model.
+TMCRA adds a dedicated long-memory layer between an agent application and its answer model.
 
 At write time, TMCRA turns dialogue into memory nodes, event units, profile signals, and graph paths. This lets the system preserve not only isolated facts, but also relationships between facts across turns and sessions.
 
 At retrieval time, TMCRA scores graph nodes and paths, selects compact evidence, and injects only the most relevant memory context into the answer model. The answer model still performs natural-language reasoning, while TMCRA handles long-memory organization, recall, and evidence surfacing.
 
-The current runtime focuses on:
+The current long-memory layer focuses on:
 
 - user fact memory
 - assistant-response memory
@@ -66,7 +66,7 @@ The writer layer produces memory units from dialogue. The graph memory store pre
 
 Long-running agents need more than simple vector recall. They need to preserve user facts, preferences, timeline changes, cross-session events, and multi-step evidence chains.
 
-TMCRA organizes memory into graph nodes and learned retrieval paths, then surfaces compact evidence to the answer model. The goal is to let external agents use long-term memory through a runtime/API layer while keeping the memory algorithm and model weights independently deployable.
+TMCRA organizes memory into graph nodes and learned retrieval paths, then surfaces compact evidence to the answer model. The goal is to let external agents use long-term memory through a memory-layer/API interface while keeping the memory algorithm and model weights independently deployable.
 
 ## How to Use
 
@@ -168,12 +168,12 @@ The included model package preserves the full training output for the graph scor
 
 ## Intended Use
 
-This repository is a public-facing evidence package for TMCRA's long-memory runtime work. It is suitable for:
+This repository is a public-facing evidence package for TMCRA's long-memory layer work. It is suitable for:
 
 - Benchmark review.
 - Model and result inspection.
 - Reproducing the frozen baseline.
-- Demonstrating how TMCRA can be packaged as an external memory runtime for agents.
+- Demonstrating how TMCRA can be packaged as an external long-memory layer for agents.
 
 ## Benchmark Result
 
