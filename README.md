@@ -2,7 +2,7 @@
 
 [中文版本](README.zh-CN.md)
 
-TMCRA is a graph-based long-memory runtime for agent systems. It helps an LLM retrieve, connect, and reason over long dialogue histories without exposing the full conversation context on every turn.
+TMCRA is a runtime layer that gives agent systems long-term memory. It helps an LLM retrieve, connect, and reason over long dialogue histories without exposing the full conversation context on every turn.
 
 This repository contains a frozen TMCRA baseline package with model weights, runtime code snapshots, training metadata, and LongMemEval S500 benchmark results.
 
