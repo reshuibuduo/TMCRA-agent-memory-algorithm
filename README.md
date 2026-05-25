@@ -1,5 +1,9 @@
 # TMCRA Long-Memory Runtime
 
+<p align="center">
+  <img src="assets/tmcra-logo.png" alt="TMCRA logo" width="420">
+</p>
+
 [中文版本](README.zh-CN.md)
 
 TMCRA is a runtime layer that gives agent systems long-term memory. It helps an LLM retrieve, connect, and reason over long dialogue histories without exposing the full conversation context on every turn.

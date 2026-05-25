@@ -1,5 +1,9 @@
 # TMCRA 长记忆运行时
 
+<p align="center">
+  <img src="assets/tmcra-logo.png" alt="TMCRA logo" width="420">
+</p>
+
 [English version](README.md)
 
 TMCRA 是给 Agent 系统提供长期记忆能力的运行时层。它帮助大语言模型在长对话历史中检索、连接和推理相关记忆，而不需要在每一轮都暴露完整上下文。
