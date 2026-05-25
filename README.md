@@ -1,18 +1,28 @@
-# TMCRA S500 Frozen Baseline 38 Release
+# TMCRA Long-Memory Runtime
 
-This repository snapshot packages the TMCRA frozen baseline used for the LongMemEval S500 full-history run completed on 2026-05-25.
+TMCRA is a graph-based long-memory runtime for agent systems. It is designed to help an LLM retrieve, connect, and reason over long dialogue histories without exposing the full conversation context on every turn.
 
-## Result
+This release contains a frozen TMCRA baseline package with model weights, runtime code snapshots, and LongMemEval S500 benchmark results.
+
+## Why TMCRA
+
+Long-running agents need more than simple vector recall. They need to preserve user facts, preferences, timeline changes, cross-session events, and multi-step evidence chains.
+
+TMCRA organizes memory into graph nodes and learned retrieval paths, then surfaces compact evidence to the answer model. The goal is to let external agents use long-term memory through a runtime/API layer while keeping the memory algorithm and model weights independently deployable.
+
+## Benchmark Result
+
+This package includes a full LongMemEval S500 run.
 
 - Benchmark: LongMemEval S set, 500 samples
-- Evaluation prompt: official-compatible LongMemEval judge
+- Evaluation: official-compatible LongMemEval judge prompt
 - Judge model: `gpt-4o`, resolved as `gpt-4o-2024-08-06`
-- Answer layer: GPT5.4-compatible API during the run
+- Answer layer used in this run: GPT5.4-compatible API
 - Overall accuracy: `310 / 500 = 62.00%`
 
-## By Question Type
+## Results by Task Type
 
-| question type | correct rate | count |
+| task type | accuracy | count |
 | --- | ---: | ---: |
 | single-session-user | 81.43% | 70 |
 | single-session-assistant | 78.57% | 56 |
@@ -21,25 +31,42 @@ This repository snapshot packages the TMCRA frozen baseline used for the LongMem
 | single-session-preference | 56.67% | 30 |
 | multi-session | 39.85% | 133 |
 
-## Packaged Contents
+## Included Artifacts
 
-- `code/`: key runtime/evaluation code snapshot used around this baseline.
-- `models/action_frame_tunnel_graph548_tunnel_fusion_train_20260524_042557/`: full graph model output directory, including final, best, last, and checkpoint weights.
-- `results/`: S500 predictions, official-compatible judge outputs, summary, and the compressed full result archive.
-- `docs/`: notes and baseline documentation.
+- `code/`: runtime and evaluation code snapshot for this baseline.
+- `models/action_frame_tunnel_graph548_tunnel_fusion_train_20260524_042557/`: full trained graph-model output directory.
+- `results/`: predictions, judge output, summary metrics, and compressed run artifacts.
+- `docs/`: baseline record and result notes.
 
-## Model Files
+## Model Package
 
-The full model directory is intentionally included. It contains:
+The included model package preserves the full training output for the graph scorer stack:
 
-- `node_scorer.pt`, `path_scorer.pt`: runtime model weights.
-- `node_scorer_best.pt`, `path_scorer_best.pt`: best checkpoint aliases.
-- `node_scorer_last.pt`, `path_scorer_last.pt`: last checkpoint aliases.
-- `checkpoints/`: epoch and step checkpoints for full training trace preservation.
-- `export_manifest.json`, `train_summary.json`, `train.log`: model metadata and training logs.
+- `node_scorer.pt` and `path_scorer.pt`: runtime graph scoring weights.
+- `node_scorer_best.pt` and `path_scorer_best.pt`: best checkpoint aliases.
+- `node_scorer_last.pt` and `path_scorer_last.pt`: final training aliases.
+- `checkpoints/`: epoch and step checkpoints.
+- `export_manifest.json`, `train_summary.json`, and `train.log`: model metadata and training trace.
 
-Large binary artifacts are tracked through Git LFS.
+## Current Strengths
 
-## Notes
+- Strong direct user-fact recall in single-session settings.
+- Strong assistant-detail recall.
+- Competitive knowledge-update behavior for changing facts.
+- Working temporal and preference retrieval layers with clear room for further specialization.
 
-This is a baseline/reproducibility package, not a polished public SDK. It is intended to preserve the exact run artifacts and model weights for later comparison, regression checks, and paper/project evidence.
+## Active Improvement Areas
+
+- Multi-session aggregation and unit coverage.
+- Deeper time-graph reasoning.
+- Preference-profile abstraction and cross-session tunneling.
+- Query-graph to memory-graph matching for complex questions.
+
+## Intended Use
+
+This repository is a public-facing evidence package for TMCRA's long-memory runtime work. It is suitable for:
+
+- Benchmark review.
+- Model and result inspection.
+- Reproducing the frozen baseline.
+- Demonstrating how TMCRA can be packaged as an external memory runtime for agents.
