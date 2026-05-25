@@ -6,6 +6,8 @@ TMCRA is a runtime layer that gives agent systems long-term memory. It helps an 
 
 This repository contains a frozen TMCRA baseline package with model weights, runtime code snapshots, training metadata, and LongMemEval S500 benchmark results.
 
+License: MIT.
+
 ## What TMCRA Does
 
 TMCRA adds a dedicated memory runtime between an agent application and its answer model.
