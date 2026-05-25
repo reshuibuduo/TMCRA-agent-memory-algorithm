@@ -1,14 +1,8 @@
 # TMCRA Long-Memory Runtime
 
-TMCRA is a graph-based long-memory runtime for agent systems. It is designed to help an LLM retrieve, connect, and reason over long dialogue histories without exposing the full conversation context on every turn.
+TMCRA is a graph-based long-memory runtime for agent systems. It helps an LLM retrieve, connect, and reason over long dialogue histories without exposing the full conversation context on every turn.
 
-This release contains a frozen TMCRA baseline package with model weights, runtime code snapshots, and LongMemEval S500 benchmark results.
-
-## Why TMCRA
-
-Long-running agents need more than simple vector recall. They need to preserve user facts, preferences, timeline changes, cross-session events, and multi-step evidence chains.
-
-TMCRA organizes memory into graph nodes and learned retrieval paths, then surfaces compact evidence to the answer model. The goal is to let external agents use long-term memory through a runtime/API layer while keeping the memory algorithm and model weights independently deployable.
+This repository contains a frozen TMCRA baseline package with model weights, runtime code snapshots, training metadata, and LongMemEval S500 benchmark results.
 
 ## What TMCRA Does
 
@@ -28,26 +22,62 @@ The current runtime focuses on:
 - learned node/path scoring
 - compact evidence selection for downstream LLMs
 
-## Benchmark Result
+## Why TMCRA
 
-This package includes a full LongMemEval S500 run.
+Long-running agents need more than simple vector recall. They need to preserve user facts, preferences, timeline changes, cross-session events, and multi-step evidence chains.
 
-- Benchmark: LongMemEval S set, 500 samples
-- Evaluation: official-compatible LongMemEval judge prompt
-- Judge model: `gpt-4o`, resolved as `gpt-4o-2024-08-06`
-- Answer layer used in this run: GPT5.4-compatible API
-- Overall accuracy: `310 / 500 = 62.00%`
+TMCRA organizes memory into graph nodes and learned retrieval paths, then surfaces compact evidence to the answer model. The goal is to let external agents use long-term memory through a runtime/API layer while keeping the memory algorithm and model weights independently deployable.
 
-## Results by Task Type
+## How to Use
 
-| task type | accuracy | count |
-| --- | ---: | ---: |
-| single-session-user | 81.43% | 70 |
-| single-session-assistant | 78.57% | 56 |
-| knowledge-update | 70.51% | 78 |
-| temporal-reasoning | 63.16% | 133 |
-| single-session-preference | 56.67% | 30 |
-| multi-session | 39.85% | 133 |
+For inference/runtime use, load the graph scorer weights from:
+
+```text
+models/action_frame_tunnel_graph548_tunnel_fusion_train_20260524_042557/
+```
+
+The main runtime files are:
+
+```text
+node_scorer.pt
+path_scorer.pt
+export_manifest.json
+```
+
+A typical runtime configuration points TMCRA to these weights:
+
+```bash
+export TMCRA_NODE_MODEL_PATH="models/action_frame_tunnel_graph548_tunnel_fusion_train_20260524_042557/node_scorer.pt"
+export TMCRA_PATH_MODEL_PATH="models/action_frame_tunnel_graph548_tunnel_fusion_train_20260524_042557/path_scorer.pt"
+export TMCRA_RETRIEVAL_MODE="hybrid_node_scored"
+export TMCRA_REQUIRE_LEARNED_SCORER="1"
+```
+
+The evaluation entrypoint snapshot is:
+
+```text
+code/run_lme_s10_native_tmcra.py
+```
+
+The core adapter snapshot is:
+
+```text
+code/memory_adapters.py
+```
+
+For a deployment build, load the two scorer files into the TMCRA adapter and point the agent's memory middleware to the TMCRA retrieval API. The answer model can be any OpenAI-compatible or local LLM endpoint; TMCRA supplies the selected memory evidence, and the answer model produces the final response.
+
+## Dependency Environment
+
+The included code snapshot is Python-based. A practical runtime environment should include:
+
+- Python 3.10 or newer
+- PyTorch, with CUDA recommended for model inference
+- NumPy and standard Python data-processing libraries
+- an OpenAI-compatible or local LLM endpoint for the answer layer
+- optional Git LFS support when pulling the full model package from GitHub
+
+The benchmark scripts expect LongMemEval-format input data and write JSONL predictions and judge outputs. Runtime deployments can use the same model files without running the benchmark harness.
 
 ## Included Artifacts
 
@@ -71,54 +101,6 @@ The included model package preserves the full training output for the graph scor
 - `checkpoints/`: epoch and step checkpoints.
 - `export_manifest.json`, `train_summary.json`, and `train.log`: model metadata and training trace.
 
-## How to Use / Load Models
-
-The runtime graph models are stored under:
-
-```text
-models/action_frame_tunnel_graph548_tunnel_fusion_train_20260524_042557/
-```
-
-For inference/runtime use, the main files are:
-
-```text
-node_scorer.pt
-path_scorer.pt
-export_manifest.json
-```
-
-The typical runtime configuration points TMCRA to these weights:
-
-```bash
-export TMCRA_NODE_MODEL_PATH="models/action_frame_tunnel_graph548_tunnel_fusion_train_20260524_042557/node_scorer.pt"
-export TMCRA_PATH_MODEL_PATH="models/action_frame_tunnel_graph548_tunnel_fusion_train_20260524_042557/path_scorer.pt"
-export TMCRA_RETRIEVAL_MODE="hybrid_node_scored"
-export TMCRA_REQUIRE_LEARNED_SCORER="1"
-```
-
-The evaluation entrypoint snapshot is:
-
-```text
-code/run_lme_s10_native_tmcra.py
-```
-
-The core adapter snapshot is:
-
-```text
-code/memory_adapters.py
-```
-
-The benchmark outputs are available in:
-
-```text
-results/predictions.jsonl
-results/judge_gpt4o_alias_vectorengine.jsonl
-results/judge_gpt4o_alias_vectorengine.jsonl.summary.json
-results/lme_s500_frozen_baseline38_full10_20260525_results.tar.gz
-```
-
-For a deployment build, load the two scorer files into the TMCRA adapter and point the agent's memory middleware to the TMCRA retrieval API. The answer model can be any OpenAI-compatible or local LLM endpoint; TMCRA supplies the selected memory evidence, and the answer model produces the final response.
-
 ## Current Strengths
 
 - Strong direct user-fact recall in single-session settings.
@@ -141,3 +123,33 @@ This repository is a public-facing evidence package for TMCRA's long-memory runt
 - Model and result inspection.
 - Reproducing the frozen baseline.
 - Demonstrating how TMCRA can be packaged as an external memory runtime for agents.
+
+## Benchmark Result
+
+This package includes a full LongMemEval S500 run.
+
+- Benchmark: LongMemEval S set, 500 samples
+- Evaluation: official-compatible LongMemEval judge prompt
+- Judge model: `gpt-4o`, resolved as `gpt-4o-2024-08-06`
+- Answer layer used in this run: GPT5.4-compatible API
+- Overall accuracy: `310 / 500 = 62.00%`
+
+## Results by Task Type
+
+| task type | accuracy | count |
+| --- | ---: | ---: |
+| single-session-user | 81.43% | 70 |
+| single-session-assistant | 78.57% | 56 |
+| knowledge-update | 70.51% | 78 |
+| temporal-reasoning | 63.16% | 133 |
+| single-session-preference | 56.67% | 30 |
+| multi-session | 39.85% | 133 |
+
+The benchmark outputs are available in:
+
+```text
+results/predictions.jsonl
+results/judge_gpt4o_alias_vectorengine.jsonl
+results/judge_gpt4o_alias_vectorengine.jsonl.summary.json
+results/lme_s500_frozen_baseline38_full10_20260525_results.tar.gz
+```
