@@ -5853,7 +5853,7 @@ class GraphSessionMemoryAdapter(MemoryAdapter):
         self.temporal_router_latest_path = _clean_text(
             temporal_router_latest_path
             or os.getenv("TMCRA_TEMPORAL_ROUTER_LATEST", "")
-            or "/home/wuyou/tmcra_training/temporal_router_v1_latest.txt"
+            or "models/temporal_router_v1_latest.txt"
         )
         self.temporal_router_device = _clean_text(
             temporal_router_device or os.getenv("TMCRA_TEMPORAL_ROUTER_DEVICE", "")

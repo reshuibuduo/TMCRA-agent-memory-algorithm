@@ -15,10 +15,10 @@ from types import SimpleNamespace
 from typing import Any, Iterable, Mapping
 
 
-DEFAULT_SERVICE_ROOT = Path("/home/wuyou/tmcra_api_service")
-DEFAULT_REPO = DEFAULT_SERVICE_ROOT / "private" / "tmcra-integrated"
-DEFAULT_DATA = Path("/home/wuyou/tmcra_longmemeval/data/longmemeval_s_cleaned.json")
-DEFAULT_OUT_ROOT = Path("/home/wuyou/tmcra_longmemeval/runs")
+DEFAULT_SERVICE_ROOT = Path(os.getenv("TMCRA_SERVICE_ROOT", "./tmcra_api_service"))
+DEFAULT_REPO = Path(os.getenv("TMCRA_REPO_ROOT", str(DEFAULT_SERVICE_ROOT / "private" / "tmcra-integrated")))
+DEFAULT_DATA = Path(os.getenv("LONGMEMEVAL_S_DATA", "./data/longmemeval_s_cleaned.json"))
+DEFAULT_OUT_ROOT = Path(os.getenv("TMCRA_LME_RUN_ROOT", "./runs"))
 
 
 def log(event: str, **payload: Any) -> None:

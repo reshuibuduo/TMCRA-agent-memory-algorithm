@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
-cd /home/wuyou/tmcra_api_service/private/tmcra-integrated
+cd <tmcra-repo-root>
 DATA=outputs/action_frame_tunnel_graph_dataset_548_event_units_20260524/dataset
 OUT="$1"
-/home/wuyou/tmcra_api_service/.venv/bin/python scripts/train_locomo_node_memory.py \
+<tmcra-service-root>/.venv/bin/python scripts/train_locomo_node_memory.py \
   --data-dir "$DATA" \
   --output-dir "$OUT" \
-  --resume-checkpoint /home/wuyou/tmcra_api_service/models/tmcra_node_memory_v11_priorfusion_zeroload_20260517/node_scorer.pt \
+  --resume-checkpoint <tmcra-service-root>/models/tmcra_node_memory_v11_priorfusion_zeroload_20260517/node_scorer.pt \
   --resume-weights-only \
   --trainable-stage tunnel_fusion_only \
   --epochs 8 \
