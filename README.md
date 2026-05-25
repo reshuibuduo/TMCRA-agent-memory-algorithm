@@ -24,6 +24,38 @@ The current runtime focuses on:
 - learned node/path scoring
 - compact evidence selection for downstream LLMs
 
+## Algorithm Structure
+
+```mermaid
+flowchart LR
+    A["Dialogue Turns"] --> B["Writer Layer"]
+    B --> C["Memory Nodes"]
+    B --> D["Event Units"]
+    B --> E["Profile Signals"]
+    B --> F["Temporal Signals"]
+
+    C --> G["Graph Memory Store"]
+    D --> G
+    E --> G
+    F --> G
+
+    G --> H["Learned Node Scorer"]
+    G --> I["Learned Path Scorer"]
+    H --> J["Evidence Selection"]
+    I --> J
+
+    J --> K["Compact Memory Context"]
+    K --> L["Answer Model"]
+    L --> M["Agent Response"]
+
+    N["User Query"] --> H
+    N --> I
+    N --> J
+    N --> L
+```
+
+The writer layer produces memory units from dialogue. The graph memory store preserves facts, events, profile signals, temporal signals, and cross-session links. The learned node/path scorers select relevant evidence for the current query, and the answer model uses that compact evidence to produce the final response.
+
 ## Why TMCRA
 
 Long-running agents need more than simple vector recall. They need to preserve user facts, preferences, timeline changes, cross-session events, and multi-step evidence chains.
