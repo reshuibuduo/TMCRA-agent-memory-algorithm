@@ -56,6 +56,11 @@ This package includes a full LongMemEval S500 run.
 - `results/`: predictions, judge output, summary metrics, and compressed run artifacts.
 - `docs/`: baseline record and result notes.
 
+Additional documentation:
+
+- `docs/BASELINE_S500_20260525.md`: benchmark record and subtask metrics.
+- `docs/TRAINING.md`: model training direction and released training artifacts.
+
 ## Model Package
 
 The included model package preserves the full training output for the graph scorer stack:
