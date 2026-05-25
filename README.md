@@ -174,6 +174,7 @@ This package includes a full LongMemEval S500 run.
 - Benchmark: LongMemEval S set, 500 samples
 - Evaluation: official-compatible LongMemEval judge prompt
 - Judge model: `gpt-4o`, resolved as `gpt-4o-2024-08-06`
+- Writer layer used in this run: DeepSeek v4 Flash
 - Answer layer used in this run: GPT5.4-compatible API
 - Overall accuracy: `310 / 500 = 62.00%`
 
