@@ -134,6 +134,7 @@ Additional documentation:
 - `docs/BASELINE_S500_20260525.md`: benchmark record and subtask metrics.
 - `docs/TRAINING.md`: model training direction and released training artifacts.
 - `docs/OPTIONAL_MODULES_AND_PARALLEL.md`: optional embedder/planner integration points and parallel evaluation plan.
+- `docs/OPTIONAL_MODULES_AND_PARALLEL.zh-CN.md`: Chinese version of the optional module and parallel evaluation guide.
 
 ## Model Package
 

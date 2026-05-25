@@ -1,39 +1,39 @@
-# 可开启模块接入与并行推进说明
+# Optional Modules and Parallel Evaluation Plan
 
-本文说明当前 TMCRA 包中已经保留的两个可开启接入口：
+This document describes two optional extension points already preserved in the current TMCRA package:
 
-- Embedder 接入口
-- LLM planner 接入口
+- Embedder interface
+- LLM planner interface
 
-同时说明 S500 基线测试中使用过的并行推进方式，方便后续在部署、评估或消融实验中复用。
+It also summarizes the parallel evaluation pattern used for the S500 baseline so later deployment, evaluation, and ablation runs can reuse the same structure.
 
-## 1. 当前主链路
+## 1. Current Main Path
 
-冻结 S500 基线的核心链路是：
+The frozen S500 baseline uses this core path:
 
 ```text
 dialogue -> writer layer -> graph memory -> learned node/path scorer -> evidence selection -> answer layer
 ```
 
-其中：
+The responsibilities are:
 
-- 写入层负责把对话转成记忆节点、事件单元、profile 信号、时间信号。
-- 图记忆层保存节点、路径和隧穿关系。
-- `node_scorer.pt` 和 `path_scorer.pt` 负责学习式节点/路径打分。
-- evidence selection 把候选记忆整理成紧凑证据。
-- 回答层 LLM 根据证据生成最终回复。
+- The writer layer converts dialogue into memory nodes, event units, profile signals, and temporal signals.
+- The graph memory layer stores nodes, paths, and tunnel links.
+- `node_scorer.pt` and `path_scorer.pt` perform learned node/path scoring.
+- Evidence selection converts candidate memories into compact evidence.
+- The answer-layer LLM produces the final response from the selected evidence.
 
-Embedder 和 LLM planner 都是可开启增强模块，不应该替代主图模型。它们更适合作为辅助通道、对比实验或高成本部署路径。
+Embedder and LLM planner modules are optional enhancement modules. They should not replace the main graph model. They are better treated as auxiliary channels, ablation switches, or higher-cost deployment paths.
 
-## 2. Embedder 接入口
+## 2. Embedder Interface
 
-Embedder 当前有三类接入位置。
+The current code exposes three embedder integration points.
 
-### 2.1 写入阶段索引
+### 2.1 Write-time Indexing
 
-写入阶段可以为新写入的记忆建立 embedding 索引，后续召回时作为辅助候选来源。
+At write time, TMCRA can build an embedding index for newly written memory nodes. That index can later serve as an auxiliary candidate source during retrieval.
 
-相关配置：
+Relevant configuration:
 
 ```bash
 export TMCRA_EMBEDDER_MODEL_PATH="BAAI/bge-m3"
@@ -43,17 +43,17 @@ export TMCRA_WRITE_EMBEDDER_INDEX_MODE="bge_m3"
 export TMCRA_WRITE_EMBEDDER_INDEX_MAX_TERMS="96"
 ```
 
-作用：
+Purpose:
 
-- 在 writer 写入记忆节点后，为节点文本建立语义索引。
-- 不改变原图结构。
-- 不替代 node/path scorer，只是给召回增加一条语义候选通道。
+- Build semantic indexes after the writer stores memory nodes.
+- Keep the original graph structure unchanged.
+- Add a semantic candidate channel without replacing the learned node/path scorers.
 
-### 2.2 召回前候选补充
+### 2.2 Pre-recall Candidate Expansion
 
-召回前可以先用 embedder 找到一批候选 event id，再交给图召回和 scorer 做后续排序。
+Before graph retrieval, the embedder can find candidate event ids, which are then passed into graph retrieval and scorer ranking.
 
-相关配置：
+Relevant configuration:
 
 ```bash
 export TMCRA_EMBEDDER_PRE_RECALL_MODE="bge_m3"
@@ -62,17 +62,17 @@ export TMCRA_EMBEDDER_INDEX_RECALL_MODE="bge_m3"
 export TMCRA_EMBEDDER_INDEX_RECALL_K="24"
 ```
 
-作用：
+Purpose:
 
-- 帮助召回阶段扩大候选范围。
-- 对语义相近但图路径弱的记忆提供补充入口。
-- 适合测试 query 与 memory 表达不完全一致的场景。
+- Expand the candidate range before retrieval.
+- Help when query wording and memory wording differ.
+- Provide an auxiliary path for semantically close memories with weak graph paths.
 
-### 2.3 召回后融合加权
+### 2.3 Post-recall Fusion
 
-召回后可以把 embedder 命中的 event 与主图模型结果融合，让高语义相关的节点获得有限 boost。
+After retrieval, embedder-matched events can be fused with graph-model results so semantically relevant nodes receive a limited boost.
 
-相关配置：
+Relevant configuration:
 
 ```bash
 export TMCRA_EMBEDDER_FUSION_MODE="on"
@@ -83,21 +83,21 @@ export TMCRA_EMBEDDER_FUSION_SELECT_K="4"
 export TMCRA_EMBEDDER_FUSION_MAX_BOOST="0.42"
 ```
 
-作用：
+Purpose:
 
-- 给语义相似候选增加有限分数。
-- 避免 embedder 直接重排主证据。
-- 适合作为主图 scorer 的辅助召回层。
+- Give semantically similar candidates a bounded score boost.
+- Prevent the embedder from directly replacing main evidence ranking.
+- Use embedding as an auxiliary recall layer for the learned graph scorer.
 
-## 3. LLM Planner 接入口
+## 3. LLM Planner Interface
 
-LLM planner 当前主要有三类接入方式。它们都位于召回之后或 query 进入召回之前，用于增强证据组织能力。
+The current code exposes three main LLM planner paths. They run either after retrieval or before query-side retrieval expansion.
 
-### 3.1 Evidence-unit planner
+### 3.1 Evidence-unit Planner
 
-Evidence-unit planner 在召回后运行，用 LLM 把候选窗口整理成 evidence unit。
+The evidence-unit planner runs after retrieval and uses an LLM to normalize retrieved windows into evidence units.
 
-相关配置：
+Relevant configuration:
 
 ```bash
 export TMCRA_EVIDENCE_UNIT_PLANNER_MODE="on"
@@ -110,7 +110,7 @@ export TMCRA_EVIDENCE_UNIT_PLANNER_MAX_TOKENS="760"
 export TMCRA_EVIDENCE_UNIT_PLANNER_REORDER="0"
 ```
 
-如果不单独设置 planner 的 base/model/key，它会继承回答层配置：
+If planner-specific base/model/key values are not configured, this planner inherits answer-layer configuration:
 
 ```bash
 export TMCRA_ANSWER_BASE_URL="<openai-compatible-base-url>"
@@ -118,17 +118,17 @@ export TMCRA_ANSWER_MODEL="<answer-model>"
 export TMCRA_ANSWER_API_KEY="<answer-api-key>"
 ```
 
-作用：
+Purpose:
 
-- 标注候选窗口里的 answer unit、positive evidence、temporal anchor、current value、old value、constraint、negative evidence。
-- 帮助最终回答层理解“这批证据应该怎么用”。
-- 默认更适合做证据整理，不建议让它直接替代图召回。
+- Mark answer units, positive evidence, temporal anchors, current values, old values, constraints, and negative evidence.
+- Help the final answer layer understand how to use the retrieved evidence.
+- Organize evidence without replacing graph retrieval.
 
-### 3.2 LLM channel planner
+### 3.2 LLM Channel Planner
 
-LLM channel planner 在最终证据进入回答层前运行，用 LLM 区分 main evidence、coverage evidence、support evidence 和 suppress evidence。
+The LLM channel planner runs before final evidence is sent to the answer layer. It separates main evidence, coverage evidence, support evidence, and suppressed evidence.
 
-相关配置：
+Relevant configuration:
 
 ```bash
 export TMCRA_LLM_CHANNEL_PLANNER_MODE="on"
@@ -137,23 +137,23 @@ export TMCRA_LLM_CHANNEL_PLANNER_WINDOW_CHARS="520"
 export TMCRA_LLM_CHANNEL_PLANNER_MAX_TOKENS="700"
 ```
 
-作用：
+Purpose:
 
-- 让 coverage 证据补充主事实，而不是替代主事实。
-- 对 count/sum/ratio/duration/multi-unit 问题特别有用。
-- 成本高于纯模型 scorer，适合高质量模式或实验开关。
+- Make coverage evidence supplement main facts instead of replacing them.
+- Improve count/sum/ratio/duration/multi-unit tasks.
+- Provide a higher-cost quality mode for experiments and selected deployments.
 
-冻结 S500 基线记录中，该项为：
+In the frozen S500 baseline record, this module was:
 
 ```text
 llm_channel_planner=off
 ```
 
-### 3.3 Query graph builder
+### 3.3 Query Graph Builder
 
-Query graph builder 在召回前运行，把用户问题转成 query graph，再扩展为 sidecar retrieval queries。
+The query graph builder runs before retrieval. It converts the user question into a compact query graph and can expand that graph into sidecar retrieval queries.
 
-相关配置：
+Relevant configuration:
 
 ```bash
 export TMCRA_QUERY_GRAPH_BUILDER_MODE="on"
@@ -166,15 +166,15 @@ export TMCRA_QUERY_GRAPH_SIDECAR_MAX_QUERIES="6"
 export TMCRA_QUERY_GRAPH_SIDECAR_TOP_K="4"
 ```
 
-作用：
+Purpose:
 
-- 把问题拆成 task intent、required units、operation、tunnel needs。
-- 对复杂 multi-session、temporal、profile 问题提供更明确的召回方向。
-- 适合做对比实验，观察“问题建图后再召回”是否提升候选命中。
+- Convert the question into task intent, required units, operation, and tunnel needs.
+- Give complex multi-session, temporal, and profile questions a clearer retrieval direction.
+- Test whether building a query graph before retrieval improves candidate recall.
 
-## 4. 本地模型 planner 与 LLM planner 的区别
+## 4. Local Model Planner vs LLM Planner
 
-当前代码里也有本地模型 planner 接口，例如：
+The code also contains local model planner interfaces, for example:
 
 ```bash
 export TMCRA_ANSWER_WINDOW_PLANNER_MODE="on"
@@ -185,40 +185,42 @@ export TMCRA_INJECTION_PLANNER_MODE="guided"
 export TMCRA_INJECTION_PLANNER_MODEL_PATH="<planner-checkpoint>"
 ```
 
-这些是本地模型接入口，不是 LLM planner。区别是：
+These are local model interfaces, not LLM planner interfaces.
 
-- LLM planner：调用外部或本地 LLM，成本更高，适合验证能力上限。
-- 本地模型 planner：成本更低，更适合产品化，但需要专项训练和稳定性验证。
+The distinction is:
 
-建议流程是：
+- LLM planner: calls an external or local LLM; higher cost; useful for validating capability ceilings.
+- Local model planner: lower cost and better for productization, but requires targeted training and stability validation.
+
+Recommended workflow:
 
 ```text
-先用 LLM planner 验证能力是否有效 -> 再把有效行为蒸馏/训练进本地图模型或 planner head
+validate behavior with an LLM planner -> distill or train the useful behavior into the graph model or a local planner head
 ```
 
-## 5. 并行推进方案
+## 5. Parallel Evaluation Plan
 
-S500 基线采用过分片并行方式：
+The S500 baseline used shard-level parallelism:
 
 ```text
 500 samples -> 10 shards -> 50 samples per shard
 ```
 
-每个 shard 独立运行：
+Each shard runs independently:
 
 ```text
 input_shard_N.json -> shard_N/ -> predictions/debug/summary
 ```
 
-核心并行原则：
+Core parallelization principles:
 
-- 每个 shard 独立进程。
-- 每个 shard 独立输出目录。
-- writer key pool 按 shard index 轮转。
-- 主模型权重只读共享。
-- 最终合并 predictions、samples_debug、judge 结果。
+- One independent process per shard.
+- One independent output directory per shard.
+- Writer key pool is rotated by shard index.
+- Main model weights are read-only and shared.
+- Predictions, samples_debug, and judge results are merged after all shards complete.
 
-冻结 S500 记录中的关键运行配置：
+Key S500 baseline runtime configuration:
 
 ```text
 samples=500
@@ -230,9 +232,9 @@ llm_channel_planner=off
 history_mode=controlled_answer_plus_distractors
 ```
 
-### 5.1 复用的并行模板
+### 5.1 Reusable Parallel Template
 
-推荐的并行模板：
+Recommended baseline template:
 
 ```bash
 export TMCRA_RETRIEVAL_MODE="hybrid_node_scored"
@@ -251,7 +253,7 @@ export TMCRA_WRITER_MAX_PROPOSALS="2"
 export TMCRA_ANSWER_MAX_TOKENS="512"
 ```
 
-单 shard 执行形态：
+Single-shard execution shape:
 
 ```bash
 python code/run_lme_s10_native_tmcra.py \
@@ -267,71 +269,71 @@ python code/run_lme_s10_native_tmcra.py \
   --chunk-chars 7000
 ```
 
-### 5.2 推进顺序
+### 5.2 Suggested Rollout Order
 
-建议按下面顺序推进，不要一次把所有模块全打开：
+Do not enable all optional modules at once. Use staged A/B testing:
 
 1. **Baseline scorer-only**
    - embedder off
    - LLM channel planner off
    - query graph builder off
-   - 用于确认 frozen baseline 是否稳定。
+   - confirms frozen baseline stability
 
 2. **Embedder pre-recall A/B**
-   - 只打开写入索引和召回前候选补充。
-   - 观察候选命中率、召回延迟、错误类型是否变化。
+   - enable write-time indexing and pre-recall candidate expansion only
+   - measure candidate hit rate, retrieval latency, and error-type shifts
 
 3. **Embedder fusion A/B**
-   - 在 pre-recall 稳定后打开 fusion。
-   - 控制 boost，不允许 embedder 直接压过主图 scorer。
+   - enable fusion only after pre-recall is stable
+   - keep boost bounded so embedder does not override the main graph scorer
 
 4. **Evidence-unit planner A/B**
-   - 打开 LLM evidence-unit planner。
-   - 观察 answer 层是否更会使用召回证据。
+   - enable LLM evidence-unit planner
+   - measure whether the answer layer uses retrieved evidence better
 
 5. **LLM channel planner A/B**
-   - 只在 multi/aggregation/temporal 错误集中验证。
-   - 重点观察 coverage 证据是否补充主事实，而不是替换主事实。
+   - test mainly on multi/aggregation/temporal error clusters
+   - verify coverage evidence supplements main facts instead of replacing them
 
 6. **Query graph builder A/B**
-   - 用于验证“问题建图后再召回”的上限。
-   - 如果有效，再考虑训练进 query-understanding 或 graph scorer。
+   - validate the ceiling of query-graph-first retrieval
+   - if effective, distill the behavior into query-understanding or graph scorer training
 
-### 5.3 并行规模建议
+### 5.3 Parallel Scale Guidance
 
-并行数不要只看 API 数量，还要看：
+Parallelism should not be determined only by the number of API keys. Also watch:
 
-- GPU 显存
-- CPU 内存
-- writer 延迟
-- answer 层延迟
-- graph ingest/SQLite 写入开销
-- 每 shard 平均 writer calls
+- GPU memory
+- CPU memory
+- writer latency
+- answer-layer latency
+- graph ingest / SQLite write overhead
+- average writer calls per shard
 
-建议从小到大：
+Scale gradually:
 
 ```text
 5 shards smoke -> 10 shards stable -> 20 shards stress -> 30 shards only if no memory/API/IO issue
 ```
 
-如果出现错误率升高、内存下降明显、API 402/429、chunk error 或 shard 卡住，应先降并行，再补跑缺失样本。
+If error rate rises, memory drops sharply, API 402/429 appears, chunk errors occur, or shards stall, reduce parallelism first and then resume missing samples.
 
-## 6. 推荐实验矩阵
+## 6. Recommended Experiment Matrix
 
-最小可解释矩阵：
+Minimal interpretable matrix:
 
-| 实验 | Embedder | LLM planner | 目的 |
+| experiment | Embedder | LLM planner | purpose |
 | --- | --- | --- | --- |
-| baseline | off | off | 固定主图模型基线 |
-| embedder-pre | pre-recall on | off | 测候选扩展是否提升 |
-| embedder-fusion | pre-recall + fusion on | off | 测语义融合是否提升 |
-| evidence-unit | off | evidence-unit on | 测回答前证据整理 |
-| channel-planner | off | channel planner on | 测 main/coverage 分离 |
-| query-graph | off | query graph on | 测问题建图召回 |
-| combined-light | pre-recall on | evidence-unit on | 测较低成本组合 |
-| combined-heavy | pre-recall + fusion on | evidence-unit + channel planner on | 测能力上限 |
+| baseline | off | off | fixed main graph-model baseline |
+| embedder-pre | pre-recall on | off | test candidate expansion |
+| embedder-fusion | pre-recall + fusion on | off | test semantic fusion |
+| evidence-unit | off | evidence-unit on | test pre-answer evidence organization |
+| channel-planner | off | channel planner on | test main/coverage separation |
+| query-graph | off | query graph on | test query-graph retrieval |
+| combined-light | pre-recall on | evidence-unit on | test lower-cost combined path |
+| combined-heavy | pre-recall + fusion on | evidence-unit + channel planner on | test capability ceiling |
 
-每一组都应保留：
+Each run should preserve:
 
 - predictions
 - samples_debug
@@ -342,4 +344,4 @@ python code/run_lme_s10_native_tmcra.py \
 - answer latency
 - per-sample error type
 
-这样后续可以判断问题来自召回、证据选择、planner、回答层，还是并行运行不稳定。
+This makes it possible to separate recall errors, evidence-selection errors, planner errors, answer-layer errors, and parallel-runtime instability.
