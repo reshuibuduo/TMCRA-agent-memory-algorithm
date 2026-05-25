@@ -76,7 +76,7 @@ The included code snapshot is Python-based. A practical runtime environment shou
 - Python 3.10 or newer
 - PyTorch, with CUDA recommended for model inference
 - NumPy and standard Python data-processing libraries
-- an OpenAI-compatible or local LLM endpoint for the answer layer
+- an OpenAI-compatible or local LLM endpoint for the answer layer and writer layer
 - optional Git LFS support when pulling the full model package from GitHub
 
 The benchmark scripts expect LongMemEval-format input data and write JSONL predictions and judge outputs. Runtime deployments can use the same model files without running the benchmark harness.

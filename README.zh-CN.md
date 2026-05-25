@@ -76,7 +76,7 @@ code/memory_adapters.py
 - Python 3.10 或更高版本
 - PyTorch，推荐使用 CUDA 做模型推理
 - NumPy 及常见 Python 数据处理库
-- 用于回答层的 OpenAI 兼容接口或本地 LLM endpoint
+- 用于回答层和写入层的 OpenAI 兼容接口或本地 LLM endpoint
 - 从 GitHub 拉取完整模型包时建议支持 Git LFS
 
 benchmark 脚本使用 LongMemEval 格式输入数据，并输出 JSONL 格式的预测和 judge 结果。实际运行时部署可以直接使用同一套模型文件，不需要运行 benchmark harness。
