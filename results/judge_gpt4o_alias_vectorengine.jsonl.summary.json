@@ -1,0 +1,36 @@
+{
+  "metric_model_alias": "gpt-4o",
+  "metric_model": "gpt-4o-2024-08-06",
+  "base_url": "https://api.vectorengine.ai/v1",
+  "hyp_file": "/home/wuyou/tmcra_longmemeval/runs/lme_s500_frozen_baseline38_gpt54_full10_20260525_085540/off/predictions.jsonl",
+  "ref_file": "/home/wuyou/tmcra_longmemeval/data/longmemeval_s_cleaned.json",
+  "result_file": "/home/wuyou/tmcra_longmemeval/runs/lme_s500_frozen_baseline38_gpt54_full10_20260525_085540/off/judge_gpt4o_alias_vectorengine.jsonl",
+  "evaluated_count": 500,
+  "accuracy": 0.62,
+  "by_question_type": {
+    "knowledge-update": {
+      "accuracy": 0.7051,
+      "count": 78
+    },
+    "multi-session": {
+      "accuracy": 0.3985,
+      "count": 133
+    },
+    "single-session-assistant": {
+      "accuracy": 0.7857,
+      "count": 56
+    },
+    "single-session-preference": {
+      "accuracy": 0.5667,
+      "count": 30
+    },
+    "single-session-user": {
+      "accuracy": 0.8143,
+      "count": 70
+    },
+    "temporal-reasoning": {
+      "accuracy": 0.6316,
+      "count": 133
+    }
+  }
+}
